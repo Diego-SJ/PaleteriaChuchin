@@ -1,0 +1,16 @@
+@import '../../scss/index.scss';
+
+.ui.button.button- {
+	&success {
+		background-color: $success;
+		color: $white;
+	}
+	&danger {
+		background-color: $danger;
+		color: $white;
+	}
+	&warning {
+		background-color: $warning;
+		color: $white;
+	}
+}
