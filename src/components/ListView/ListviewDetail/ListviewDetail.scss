@@ -37,30 +37,6 @@
 	&-actions {
 		display: flex;
 		justify-content: space-between;
-		> .ui.button {
-			width: 40px;
-			height: 30px;
-			display: flex !important;
-			padding: 0;
-			align-items: center !important;
-			justify-content: center !important;
-
-			> i {
-				margin: 3.5px 0 0 0 !important;
-				font-size: 1.5rem;
-				color: $white;
-			}
-		}
-
-		> .ui.button.btn-success {
-			background-color: $success;
-		}
-		> .ui.button.btn-warning {
-			background-color: $warning;
-		}
-		> .ui.button.btn-danger {
-			background-color: $danger;
-		}
 	}
 }
 

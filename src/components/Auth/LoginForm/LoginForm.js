@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Button, Form, Input } from 'semantic-ui-react';
 import { validateEmail, validatePassword } from '../../../utils/Validations';
 import firebase from '../../../utils/Firebase';
-import 'firebase/firestore';
 import './LoginForm.scss';
 import { toast } from 'react-toastify';
 

@@ -1,38 +1,39 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button, Form, Input, Select } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
+import { map } from 'lodash';
 import { Image } from 'semantic-ui-react';
 import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
+import { renameId } from '../../../utils/Api';
+import * as moment from 'moment';
 
 import firebase from '../../../utils/Firebase';
-import 'firebase/auth';
-import 'firebase/storage';
-import 'firebase/firestore';
 
 import './ProductForm.scss';
 import noImage from '../../../assets/img/picture.png';
 
+const db = firebase.firestore(firebase);
+
 const ProductForm = (props) => {
 	const { updateData, data, setShowModal } = props;
-
-	const db = firebase.firestore(firebase);
 
 	const [formData, setFormData] = useState(initialFormState());
 	const [formError, setFormError] = useState({});
 	const [isLoading, setIsLoading] = useState(false);
 	const [imageUrl, setImageUrl] = useState(null);
+	const [categories, setCategories] = useState(null);
 
 	useEffect(() => {
 		if (data) {
 			setFormData({
+				code: data.code,
 				name: data.name,
 				wholesalePrice: data.wholesalePrice,
 				retailPrice: data.retailPrice,
 				unit: data.unit,
-				imageUrl: '',
-				createdAt: data.createdAt,
-				createdBy: data.createdBy,
+				category: data.category,
+				imageUrl: data.imageUrl,
 			});
 		}
 	}, [data]);
@@ -63,17 +64,37 @@ const ProductForm = (props) => {
 	};
 
 	const unit = [
-		{ key: 'u', value: 'u', text: 'unidades' },
-		{ key: 'pzs', value: 'pzs', text: 'piezas' },
-		{ key: 'cjs', value: 'cjs', text: 'cajas' },
-		{ key: 'bts', value: 'bts', text: 'botes' },
-		{ key: 'm', value: 'm', text: 'metros' },
+		{ key: 'piezas', value: 'piezas', text: 'piezas' },
+		{ key: 'cajas', value: 'cajas', text: 'cajas' },
+		{ key: 'botes', value: 'botes', text: 'botes' },
+		{ key: 'metros', value: 'metros', text: 'metros' },
 		{ key: 'cm', value: 'cm', text: 'centímetros' },
 		{ key: 'kg', value: 'kg', text: 'kilogramos' },
 		{ key: 'g', value: 'g', text: 'gramos' },
 		{ key: 'l', value: 'l', text: 'litros' },
 		{ key: 'ml', value: 'ml', text: 'mililitros' },
 	];
+
+	const getAllCategories = () => {
+		if (categories === null) {
+			console.log('get cat');
+			db
+				.collection('Categories')
+				.get()
+				.then((res) => {
+					const arrayCategories = [];
+					map(res?.docs, (category) => {
+						const data = {};
+						data.key = category.data().name;
+						data.value = category.data().name;
+						data.text = category.data().name;
+						console.log(data);
+						arrayCategories.push(data);
+					});
+					setCategories(arrayCategories);
+				});
+		}
+	};
 
 	const uploadImage = (fileName) => {
 		const ref = firebase.storage().ref().child(`products/${fileName}`);
@@ -85,6 +106,11 @@ const ProductForm = (props) => {
 		let errors = {};
 		let formOk = true;
 
+		if (!formData.code || formData.code.length < 6) {
+			toast.error('El código debe ser un número de al menos 6 digítos.');
+			errors.name = true;
+			formOk = false;
+		}
 		if (!formData.name) {
 			errors.name = true;
 			formOk = false;
@@ -101,9 +127,15 @@ const ProductForm = (props) => {
 			errors.unit = true;
 			formOk = false;
 		}
-		if (!imageUrl) {
+		if (!formData.category) {
+			errors.category = true;
 			formOk = false;
-			toast.error('Debes agregar una imágen.');
+		}
+		if (!data) {
+			if (!imageUrl) {
+				formOk = false;
+				toast.error('Debes agregar una imágen.');
+			}
 		}
 		setFormError(errors);
 
@@ -119,33 +151,51 @@ const ProductForm = (props) => {
 
 	const createProduct = () => {
 		let user = firebase.auth().currentUser;
-		const fileName = uuidv4();
-		uploadImage(fileName)
-			.then(() => {
-				const productDetails = {
-					name: formData.name,
-					wholesalePrice: formData.wholesalePrice,
-					retailPrice: formData.retailPrice,
-					unit: formData.unit,
-					imageUrl: fileName,
-					createdAt: new Date(),
-					createdBy: user.displayName,
-				};
-				db
-					.collection('Products')
-					.add(productDetails)
-					.then(() => {
-						toast.success('Producto registrado correctaente.');
-						setFormData(initialFormState());
-						updateData();
-					})
-					.catch((err) => {
-						toast.error(`Error: ${err.code}`);
-					});
+		const newId = renameId(`${formData.name} ${formData.code}`);
+		console.log(newId);
+		db
+			.doc(`Products/${newId}`)
+			.get()
+			.then((res) => {
+				if (res.exists) {
+					toast.error('Ya hay un producto registrado con este nombre o código.');
+				} else {
+					const fileName = uuidv4();
+					uploadImage(fileName)
+						.then(() => {
+							db
+								.doc(`Products/${newId}`)
+								.set({
+									code: formData.code,
+									name: formData.name,
+									wholesalePrice: formData.wholesalePrice,
+									retailPrice: formData.retailPrice,
+									unit: formData.unit,
+									category: formData.category,
+									imageUrl: fileName,
+									createdAt: moment().format('L'),
+									createdBy: user.displayName,
+									modifiedAt: '',
+									modifiedBy: '',
+									id: newId,
+								})
+								.then(() => {
+									updateData();
+									toast.success('Producto registrado correctaente.');
+									setFormData(initialFormState());
+								})
+								.catch((err) => {
+									toast.error(`Error: ${err.code}`);
+								});
+						})
+						.catch((err) => {
+							console.log(`Error: ${err}`);
+							toast.error('Error al subir la imágen, inetenta más tarde.');
+						});
+				}
 			})
 			.catch((err) => {
-				console.log(`Error: ${err}`);
-				toast.error('Error al subir la imágen, inetenta más tarde.');
+				toast.error(`Error: ${err.code}`);
 			})
 			.finally(() => {
 				setIsLoading(false);
@@ -154,29 +204,66 @@ const ProductForm = (props) => {
 
 	const updateProduct = () => {
 		let user = firebase.auth().currentUser;
-		const productDetails = {
-			name: formData.name,
-			wholesalePrice: formData.wholesalePrice,
-			retailPrice: formData.retailPrice,
-			unit: formData.unit,
-			imageUrl: '',
-			createdAt: new Date(),
-			createdBy: user.displayName,
-		};
+		let productDetails = {};
+		if (imageUrl) {
+			firebase
+				.storage()
+				.ref()
+				.child(`products/${formData.imageUrl}`)
+				.delete()
+				.then(() => {
+					const fileName = uuidv4();
+					uploadImage(fileName)
+						.then(() => {
+							productDetails = {
+								code: formData.code,
+								name: formData.name,
+								wholesalePrice: formData.wholesalePrice,
+								retailPrice: formData.retailPrice,
+								unit: formData.unit,
+								category: formData.category,
+								imageUrl: fileName,
+								modifiedAt: moment().format('L'),
+								modifiedBy: user.displayName,
+							};
+							setProductsDetail(productDetails);
+						})
+						.catch((err) => {
+							toast.error(`Error: ${err.code}`);
+						});
+				})
+				.catch((err) => {
+					console.log(err.code);
+					toast.error('Error al actualizar la imágen, intenta más tarde.');
+				});
+		} else {
+			productDetails = {
+				name: formData.name,
+				wholesalePrice: formData.wholesalePrice,
+				retailPrice: formData.retailPrice,
+				unit: formData.unit,
+				category: formData.category,
+				modifiedAt: moment().format('L'),
+				modifiedBy: user.displayName,
+			};
+			setProductsDetail(productDetails);
+		}
+
+		setIsLoading(false);
+		setShowModal(false);
+	};
+
+	const setProductsDetail = (detailsProd) => {
 		db
 			.collection('Products')
 			.doc(data.id)
-			.update(productDetails)
+			.update(detailsProd)
 			.then(() => {
-				toast.success('Producto actualizado correctaente.');
 				updateData();
+				toast.success('Producto actualizado correctaente.');
 			})
 			.catch((err) => {
 				toast.error(err.code);
-			})
-			.finally(() => {
-				setIsLoading(false);
-				setShowModal(false);
 			});
 	};
 
@@ -188,6 +275,17 @@ const ProductForm = (props) => {
 				onChange={onChange}
 				className='register-user__form'
 			>
+				<Form.Field>
+					<Input
+						type='number'
+						name='code'
+						value={formData.code}
+						placeholder='Código del producto'
+						icon='user'
+						error={formError.code}
+					/>
+					{formError.code && <span className='error-text'>Campo obligatorio.</span>}
+				</Form.Field>
 				<Form.Field>
 					<Input
 						type='text'
@@ -237,6 +335,20 @@ const ProductForm = (props) => {
 					{formError.unit && <span className='error-text'>Campo obligatorio.</span>}
 				</Form.Field>
 				<Form.Field>
+					<Select
+						name='category'
+						placeholder={'Categorīas'}
+						value={formData.category}
+						onClick={() => getAllCategories()}
+						onChange={(e, data) => handlerSelect(data)}
+						options={categories !== null ? categories : []}
+						error={formError.category}
+					/>
+					{formError.category && (
+						<span className='error-text'>Campo obligatorio.</span>
+					)}
+				</Form.Field>
+				<Form.Field>
 					<div className='upload-image'>
 						<div className='upload-image__content' {...getRootProps()}>
 							<input {...getInputProps()} />
@@ -259,10 +371,12 @@ const ProductForm = (props) => {
 
 function initialFormState() {
 	return {
+		code: '',
 		name: '',
 		wholesalePrice: '',
 		retailPrice: '',
 		unit: '',
+		category: '',
 		imageUrl: '',
 		createdAt: '',
 		createdBy: '',

@@ -4,7 +4,6 @@ import { map } from 'lodash';
 import ClientForm from '../../components/Forms/ClientForm';
 import ListviewContainer from '../../components/ListView/ListviewContainer';
 import firebase from '../../utils/Firebase';
-import 'firebase/firestore';
 import './Clients.scss';
 const usersImg = require('../../assets/img/clients.png');
 

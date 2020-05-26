@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button, Form, Input, Select, Checkbox } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
 import { validateEmail } from '../../../utils/Validations';
+import { renameId } from '../../../utils/Api';
 import firebase from '../../../utils/Firebase';
-import 'firebase/auth';
-import 'firebase/firestore';
-import './UsersForm.scss';
+import * as moment from 'moment';
 
 const ProfileForm = (props) => {
 	const { updateData, employee, setShowModal } = props;
@@ -20,7 +19,7 @@ const ProfileForm = (props) => {
 		if (employee) {
 			setFormData({
 				name: employee.name,
-				lname: employee.lName,
+				lName: employee.lName,
 				phone: employee.phone,
 				user: employee.user,
 				email: employee.email,
@@ -77,8 +76,8 @@ const ProfileForm = (props) => {
 			errors.rol = true;
 			formOk = false;
 		}
-		if (!formData.lname) {
-			errors.lname = true;
+		if (!formData.lName) {
+			errors.lName = true;
 			formOk = false;
 		}
 		if (!formData.user.trim()) {
@@ -98,48 +97,46 @@ const ProfileForm = (props) => {
 	};
 
 	const createUser = () => {
+		let user = firebase.auth().currentUser;
+		const newId = renameId(`${formData.name} ${formData.lName}`);
 		db
-			.doc(`/Employees/${formData.email}`)
+			.doc(`Employees/${newId}`)
 			.get()
-			.then((doc) => {
-				if (doc.exists) {
-					toast.error('El nombre de usuario ya existe.');
+			.then((res) => {
+				if (res.exists) {
+					toast.error(
+						'Ya hay un usuario registrado con el nombre que deseas ingresar.',
+					);
 				} else {
-					const userCredentials = {
-						name: formData.name,
-						lName: formData.lname,
-						phone: formData.phone,
-						user: formData.user,
-						email: formData.email,
-						rol: formData.rol,
-						permissionStock: formData.permissionStock,
-						permissionProducts: formData.permissionProducts,
-						permissionSales: formData.permissionSales,
-						permissionCustomer: formData.permissionCustomer,
-						userId: '',
-					};
-
 					db
-						.doc(`/Employees/${formData.email}`)
-						.set(userCredentials)
+						.doc(`/Employees/${newId}`)
+						.set({
+							name: formData.name,
+							lName: formData.lName,
+							phone: formData.phone,
+							user: formData.user,
+							email: formData.email,
+							rol: formData.rol,
+							permissionStock: formData.permissionStock,
+							permissionProducts: formData.permissionProducts,
+							permissionSales: formData.permissionSales,
+							permissionCustomer: formData.permissionCustomer,
+							createdAt: moment().format('L'),
+							createdBy: user.displayName,
+							userId: newId,
+						})
 						.catch((err) => {
 							toast.error(`Error: ${err.code}`);
 						});
 				}
 			})
 			.then(() => {
-				toast.success('Empleado registrado correctaente.');
-				setFormData(initialFormState());
 				updateData();
+				setFormData(initialFormState());
+				toast.success('Empleado registrado correctaente.');
 			})
 			.catch((err) => {
-				if (err.code === 'auth/weak-password') {
-					toast.error(
-						'El nombre de usuario debe contener una combinación de letras y al menos 1 número.',
-					);
-				} else {
-					toast.error(`Codigo de error: ${err.code}`);
-				}
+				toast.error(`Error: ${err.code}`);
 			})
 			.finally(() => {
 				setIsLoading(false);
@@ -152,7 +149,7 @@ const ProfileForm = (props) => {
 			.doc(employee.id)
 			.update({
 				name: formData.name,
-				lName: formData.lname,
+				lName: formData.lName,
 				phone: formData.phone,
 				user: formData.user,
 				email: formData.email,
@@ -180,7 +177,7 @@ const ProfileForm = (props) => {
 	// 	firebase
 	// 		.auth()
 	// 		.currentUser.updateProfile({
-	// 			displayName: `${formData.name} ${formData.lname}`,
+	// 			displayName: `${formData.name} ${formData.lName}`,
 	// 		})
 	// 		.then(() => {
 	// 			setFormData(initialFormState());
@@ -212,13 +209,13 @@ const ProfileForm = (props) => {
 				<Form.Field>
 					<Input
 						type='text'
-						name='lname'
-						value={formData.lname}
+						name='lName'
+						value={formData.lName}
 						placeholder='Apellidos'
 						icon='user'
-						error={formError.lname}
+						error={formError.lName}
 					/>
-					{formError.lname && <span className='error-text'>Campo obligatorio.</span>}
+					{formError.lName && <span className='error-text'>Campo obligatorio.</span>}
 				</Form.Field>
 				<Form.Field>
 					<Input
@@ -316,7 +313,7 @@ const ProfileForm = (props) => {
 function initialFormState() {
 	return {
 		name: '',
-		lname: '',
+		lName: '',
 		phone: '',
 		user: '',
 		email: '',

@@ -1,17 +1,14 @@
-import React, { useState } from 'react';
-import { Button, Icon } from 'semantic-ui-react';
+import React, { useState, useEffect } from 'react';
+import { Icon } from 'semantic-ui-react';
 import BasicModal from '../../Modal/BasicModal';
-import UsersForm from '../../Forms/UsersForm';
-import ClientForm from '../../Forms/ClientForm';
+import ProductForm from '../../Forms/ProductForm';
 import GeneralButton from '../../Button';
 import firebase from '../../../utils/Firebase';
-import 'firebase/firestore';
 
 import './Cardview.scss';
 import { toast } from 'react-toastify';
 
-const imgAvatar = require('../../../assets/img/admin.png');
-const imgClient = require('../../../assets/img/clients.png');
+import noImage from '../../../assets/img/picture.png';
 
 export default function ListviewDetail(props) {
 	const { detail, updateData, type } = props;
@@ -21,17 +18,28 @@ export default function ListviewDetail(props) {
 	const [ShowModal, setShowModal] = useState(false);
 	const [titleModal, setTitleModal] = useState(null);
 	const [contentModal, setContentModal] = useState(null);
+	const [imageUrl, setImageUrl] = useState(null);
+
+	useEffect(() => {
+		firebase
+			.storage()
+			.ref(`products/${detail.imageUrl}`)
+			.getDownloadURL()
+			.then((url) => {
+				setImageUrl(url);
+			});
+	}, [detail]);
 
 	const handlerModal = (type) => {
 		switch (type) {
 			case 'detail':
 				setShowModal(true);
-				setContentModal(contentDetail);
+				setContentModal(contentDetail(detail));
 				setTitleModal('Más detalles');
 				break;
 			case 'update':
 				setShowModal(true);
-				setContentModal(contentUpdate);
+				setContentModal(contentUpdate(detail));
 				setTitleModal('Actualizar información');
 				break;
 			case 'delete':
@@ -46,19 +54,29 @@ export default function ListviewDetail(props) {
 	};
 
 	const deleteItem = () => {
-		db
-			.collection(type)
-			.doc(detail.id)
+		firebase
+			.storage()
+			.ref()
+			.child(`products/${detail.imageUrl}`)
 			.delete()
 			.then(() => {
-				toast.success('Item eliminado correctamente.');
+				db
+					.collection(type)
+					.doc(detail.id)
+					.delete()
+					.then(() => {
+						updateData();
+						toast.success('Item eliminado correctamente.');
+					})
+					.catch((err) => {
+						toast.error(`Error: ${err.code}`);
+					});
 			})
 			.catch((err) => {
 				toast.error(`Error: ${err.code}`);
 			})
 			.finally(() => {
 				closeModal();
-				updateData();
 			});
 	};
 
@@ -75,100 +93,60 @@ export default function ListviewDetail(props) {
 		);
 	};
 
-	const contentDetail = () => {
+	const contentDetail = (detail) => {
 		switch (type) {
-			case 'Clients':
+			case 'Products':
 				return (
 					<div className='content-detail'>
 						<div className='content-detail__avatar'>
-							<img src={imgClient} alt='content avatar' />
+							<img src={imageUrl ? imageUrl : noImage} alt='content avatar' />
 						</div>
 						<div className='content-detail__info'>
 							<ul>
+								<li>
+									<b>Código:</b>
+									{detail.code}
+								</li>
 								<li>
 									<b>Nombre:</b>
 									{detail.name}
 								</li>
 								<li>
-									<b>Apellido(s): </b>
-									{detail.lName}
+									<b>Precio de mayoreo: </b>
+									{detail.wholesalePrice}
 								</li>
 								<li>
-									<b>Teléfono: </b>
-									{detail.phone}
+									<b>Precio de menudeo: </b>
+									{detail.retailPrice}
 								</li>
 								<li>
-									<b>Dirección: </b>
-									{detail.address}
+									<b>Unidad de medida: </b>
+									{detail.unit}
 								</li>
 								<li>
-									<b>Fecha de creación: </b>
-									{detail.createdAt}
+									<b>Categoría: </b>
+									{detail.category}
 								</li>
+								<li>
+									<b>Fecha creación: </b>
+									{`${detail.createdAt}`}
+								</li>
+								{detail.modifiedAt && (
+									<li>
+										<b>Fecha modificación: </b>
+										{`${detail.createdAt}`}
+									</li>
+								)}
 								<li>
 									<b>Creado por: </b>
 									{detail.createdBy}
 								</li>
-								<li>
-									<b>Cliente frecuente: </b>
-									{detail.regularClient ? 'si' : 'no'}
-								</li>
-								<li>
-									<b>Precio de venta: </b>
-									{detail.wholesalePrice ? 'mayoreo' : 'menudeo'}
-								</li>
-							</ul>
-						</div>
-					</div>
-				);
-			case 'Employees':
-				return (
-					<div className='content-detail'>
-						<div className='content-detail__avatar'>
-							<img src={imgAvatar} alt='content avatar' />
-						</div>
-						<div className='content-detail__info'>
-							<ul>
-								<li>
-									<b>Nombre:</b>
-									{detail.name}
-								</li>
-								<li>
-									<b>Apellido(s): </b>
-									{detail.lName}
-								</li>
-								<li>
-									<b>Teléfono: </b>
-									{detail.phone}
-								</li>
-								<li>
-									<b>Correo: </b>
-									{detail.email}
-								</li>
-								<li>
-									<b>Usuario: </b>
-									{detail.user}
-								</li>
-								<li>
-									<b>Puesto: </b>
-									{detail.rol}
-								</li>
-								<li>
-									<b>Permisos de Stock: </b>
-									{detail.permissionStock ? 'si' : 'no'}
-								</li>
-								<li>
-									<b>Permisos de Clientes: </b>
-									{detail.permissionCustomer ? 'si' : 'no'}
-								</li>
-								<li>
-									<b>Permisos de Ventas: </b>
-									{detail.permissionSales ? 'si' : 'no'}
-								</li>
-								<li>
-									<b>Permisos de Productos: </b>
-									{detail.permissionProducts ? 'si' : 'no'}
-								</li>
+								{detail.modifiedBy && (
+									<li>
+										<b>Modificado por: </b>
+										{`${detail.modifiedBy}`}
+									</li>
+								)}
 							</ul>
 						</div>
 					</div>
@@ -180,21 +158,11 @@ export default function ListviewDetail(props) {
 
 	const contentUpdate = () => {
 		switch (type) {
-			case 'Clients':
+			case 'Products':
 				return (
 					<>
-						<ClientForm
+						<ProductForm
 							data={detail}
-							updateData={updateData}
-							setShowModal={setShowModal}
-						/>
-					</>
-				);
-			case 'Employees':
-				return (
-					<>
-						<UsersForm
-							employee={detail}
 							updateData={updateData}
 							setShowModal={setShowModal}
 						/>
@@ -207,35 +175,33 @@ export default function ListviewDetail(props) {
 
 	return (
 		<>
-			<div className='card-view__item'>
+			<div className='card-view__item' key={detail.id}>
 				<div className='card-view__item-avatar'>
-					<img src={type === 'Employees' ? imgAvatar : imgClient} alt='my avatar' />
+					<img src={imageUrl ? imageUrl : noImage} alt='product' />
 				</div>
-				<div className='card-view__item-name'>
-					<span>{`${detail.name} ${detail.lName}`}</span>
-				</div>
+				<p className='card-view__item-name'>{detail.name}</p>
 				<div className='card-view__item-actions'>
-					<Button
+					<GeneralButton
 						onClick={() => handlerModal('detail')}
 						type='button'
-						className='btn-success'
-					>
-						<Icon name='eye' />
-					</Button>
-					<Button
+						size='sm'
+						color='success'
+						content={<Icon name='eye' />}
+					/>
+					<GeneralButton
 						onClick={() => handlerModal('update')}
 						type='button'
-						className='btn-warning'
-					>
-						<Icon name='pen square' />
-					</Button>
-					<Button
+						size='sm'
+						color='warning'
+						content={<Icon name='pen square' />}
+					/>
+					<GeneralButton
 						onClick={() => handlerModal('delete')}
 						type='button'
-						className='btn-danger'
-					>
-						<Icon name='trash' />
-					</Button>
+						size='sm'
+						color='danger'
+						content={<Icon name='trash' />}
+					/>
 				</div>
 			</div>
 			<BasicModal show={ShowModal} setShow={setShowModal} title={titleModal}>

@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Button, Icon } from 'semantic-ui-react';
+import { Icon } from 'semantic-ui-react';
 import BasicModal from '../../Modal/BasicModal';
 import UsersForm from '../../Forms/UsersForm';
 import ClientForm from '../../Forms/ClientForm';
 import GeneralButton from '../../Button';
 import firebase from '../../../utils/Firebase';
-import 'firebase/firestore';
 
 import './ListviewDetail.scss';
 import { toast } from 'react-toastify';
@@ -215,27 +214,27 @@ export default function ListviewDetail(props) {
 					<span>{`${detail.name} ${detail.lName}`}</span>
 				</div>
 				<div className='list-view__item-actions'>
-					<Button
+					<GeneralButton
 						onClick={() => handlerModal('detail')}
 						type='button'
-						className='btn-success'
-					>
-						<Icon name='eye' />
-					</Button>
-					<Button
+						size='sm'
+						color='success'
+						content={<Icon name='eye' />}
+					/>
+					<GeneralButton
 						onClick={() => handlerModal('update')}
 						type='button'
-						className='btn-warning'
-					>
-						<Icon name='pen square' />
-					</Button>
-					<Button
+						size='sm'
+						color='warning'
+						content={<Icon name='pen square' />}
+					/>
+					<GeneralButton
 						onClick={() => handlerModal('delete')}
 						type='button'
-						className='btn-danger'
-					>
-						<Icon name='trash' />
-					</Button>
+						size='sm'
+						color='danger'
+						content={<Icon name='trash' />}
+					/>
 				</div>
 			</div>
 			<BasicModal show={ShowModal} setShow={setShowModal} title={titleModal}>

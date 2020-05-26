@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { Button, Form, Input } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
 import firebase from '../../../utils/Firebase';
-import 'firebase/auth';
-import 'firebase/firestore';
 
 import './UpdateProfile.scss';
 

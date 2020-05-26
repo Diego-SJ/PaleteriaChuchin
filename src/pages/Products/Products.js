@@ -5,31 +5,29 @@ import { map } from 'lodash';
 import ProductForm from '../../components/Forms/ProductForm';
 import CardviewContainer from '../../components/ListView/CardviewContainer';
 import firebase from '../../utils/Firebase';
-import 'firebase/firestore';
-import './Products.scss';
 const productsImg = require('../../assets/img/products.png');
 
 const db = firebase.firestore(firebase);
 
 export default function Users() {
-	const [employees, setEmployees] = useState([]);
+	const [products, setProducts] = useState([]);
 
 	useEffect(() => {
-		getAllEmployess();
+		getAllProducts();
 	}, []);
 
-	const getAllEmployess = () => {
+	const getAllProducts = () => {
 		db
-			.collection('Employees')
+			.collection('Products')
 			.get()
 			.then((res) => {
-				const arrayEmployees = [];
-				map(res?.docs, (employee) => {
-					const data = employee.data();
-					data.id = employee.id;
-					arrayEmployees.push(data);
+				const arrayProducts = [];
+				map(res?.docs, (product) => {
+					const data = product.data();
+					data.id = product.id;
+					arrayProducts.push(data);
 				});
-				setEmployees(arrayEmployees);
+				setProducts(arrayProducts);
 			});
 	};
 
@@ -43,14 +41,14 @@ export default function Users() {
 					</Grid.Row>
 					<Grid.Row className='general-grid__content'>
 						<Grid.Column width={6} className='users-left'>
-							<ProductForm updateData={getAllEmployess} />
+							<ProductForm updateData={getAllProducts} />
 						</Grid.Column>
 						<Grid.Column width={10} className='users-right'>
 							<CardviewContainer
-								data={employees}
-								searchText='Buscar empleado'
-								type='Employees'
-								updateData={getAllEmployess}
+								data={products}
+								searchText='Buscar producto'
+								type='Products'
+								updateData={getAllProducts}
 							/>
 						</Grid.Column>
 					</Grid.Row>

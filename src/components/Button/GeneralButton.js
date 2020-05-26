@@ -16,8 +16,9 @@ export default function GeneralButton(props) {
 		<Button
 			onClick={onClick}
 			type={type}
-			content={content}
-			className={`button-${color} button-${size}`}
-		/>
+			className={`button-${color} button-size__${size}`}
+		>
+			{content}
+		</Button>
 	);
 }

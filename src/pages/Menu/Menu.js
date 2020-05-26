@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Grid } from 'semantic-ui-react';
 import firebase from '../../utils/Firebase';
-import 'firebase/firestore';
 import Card from '../../components/Menu/Card';
 import './Menu.scss';
 
@@ -19,12 +18,8 @@ export default function Menu(props) {
 	const [permissions, setPermissions] = useState(initialPermissionsState());
 
 	useEffect(() => {
-		let mounted = true;
-		if (mounted) {
-			getUserPermissions();
-		}
-		return () => (mounted = false);
-	}, []);
+		getUserPermissions();
+	});
 
 	const getUserPermissions = () => {
 		db

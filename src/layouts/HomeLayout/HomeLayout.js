@@ -4,7 +4,6 @@ import { Grid } from 'semantic-ui-react';
 import { isUserAdmin } from '../../utils/Api';
 
 import firebase from '../../utils/Firebase';
-import 'firebase/auth';
 import './HomeLayout.scss';
 import Routes from '../../routes/Routes';
 import TopBar from '../../components/Menu/TopBar';
@@ -45,6 +44,9 @@ export const HomeLayout = (props) => {
 							</Link>
 							<Link to='/sale' className='side-menu__content-btn'>
 								Nueva venta
+							</Link>
+							<Link to='/settings' className='side-menu__content-btn'>
+								Configuración
 							</Link>
 						</div>
 						<div className='side-menu__foot'>

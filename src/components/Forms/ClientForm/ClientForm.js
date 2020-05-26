@@ -9,9 +9,7 @@ import {
 } from 'semantic-ui-react';
 import { toast } from 'react-toastify';
 import firebase from '../../../utils/Firebase';
-import 'firebase/auth';
-import 'firebase/firestore';
-import './ClientForm.scss';
+import { renameId } from '../../../utils/Api';
 
 const ClientForm = (props) => {
 	const { updateData, data, setShowModal } = props;
@@ -79,27 +77,42 @@ const ClientForm = (props) => {
 
 	const createClient = () => {
 		let user = firebase.auth().currentUser;
-		const clientCredentials = {
-			name: formData.name,
-			lName: formData.lName,
-			phone: formData.phone,
-			address: formData.address,
-			regularClient: formData.regularClient,
-			wholesalePrice: formData.wholesalePrice,
-			createdBy: user.displayName,
-			createdAt: new Date().toISOString(),
-			userId: '',
-		};
+		const newId = renameId(`${formData.name} ${formData.lName}`);
+		console.log(newId);
 		db
-			.collection('Clients')
-			.add(clientCredentials)
-			.then(() => {
-				toast.success('Cliente registrado correctaente.');
-				setFormData(initialFormState());
-				updateData();
+			.doc(`Clients/${newId}`)
+			.get()
+			.then((res) => {
+				if (res.exists) {
+					toast.error(
+						'Ya hay un clinte registrado con el nombre que deseas ingresar.',
+					);
+				} else {
+					db
+						.doc(`Clients/${newId}`)
+						.set({
+							name: formData.name,
+							lName: formData.lName,
+							phone: formData.phone,
+							address: formData.address,
+							regularClient: formData.regularClient,
+							wholesalePrice: formData.wholesalePrice,
+							createdBy: user.displayName,
+							createdAt: new Date().toISOString(),
+							id: newId,
+						})
+						.then(() => {
+							toast.success('Cliente registrado correctaente.');
+							setFormData(initialFormState());
+							updateData();
+						})
+						.catch((err) => {
+							toast.error(`Codigo de error: ${err}`);
+						});
+				}
 			})
 			.catch((err) => {
-				toast.error(`Codigo de error: ${err}`);
+				toast.error(`Error: ${err.code}`);
 			})
 			.finally(() => {
 				setIsLoading(false);

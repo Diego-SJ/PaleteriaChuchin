@@ -4,9 +4,6 @@ import { toast } from 'react-toastify';
 import { validatePassword } from '../../../utils/Validations';
 import { reathenticate } from '../../../utils/Api';
 import firebase from '../../../utils/Firebase';
-import 'firebase/auth';
-import 'firebase/firestore';
-
 import './UpdateProfile.scss';
 
 export default function UpdatePasswordForm(props) {

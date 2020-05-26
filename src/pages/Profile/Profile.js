@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Grid } from 'semantic-ui-react';
 import firebase from '../../utils/Firebase';
-import 'firebase/firestore';
 import ProfilePicture from '../../components/Users/ProfilePicture';
 import UpdateProfileForm from '../../components/Users/UpdateProfileForm/UpdateProfileForm';
 import UpdatePasswordForm from '../../components/Users/UpdateProfileForm/UpdatePasswordForm';
